@@ -3,7 +3,7 @@ commands:
   print_parameter:
     description: to print pipeline id
     parameters:
-      id: string
+      id: Mapping
       default: dummy id
     steps:
       - run: echo << parameters.to >>
