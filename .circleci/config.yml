@@ -23,7 +23,7 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - print_parameter:
-          to: ${CIRCLE_WORKFLOW_ID}
+          id: ${CIRCLE_WORKFLOW_ID}
   save_hello_world_output:
     docker:
       - image: circleci/node:13.8.0
