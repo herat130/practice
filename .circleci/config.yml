@@ -3,10 +3,10 @@ commands:
   print_parameter:
     description: to print pipeline id
     parameters:
-      id: Mapping
+      id: string
       default: dummy id
     steps:
-      - run: echo << parameters.to >>
+      - run: echo << parameters.id >>
 jobs:
   print_hello:
     docker:
