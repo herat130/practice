@@ -1,4 +1,12 @@
 version: 2.1
+commands:
+  print_parameter:
+    description: to print pipeline id
+    parameters:
+      id: string
+      default: dummy id
+    steps:
+      - run: echo << parameters.to >>
 jobs:
   print_hello:
     docker:
@@ -10,6 +18,12 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - run: echo ${MY_ENV_NAME}
+  print_pipeline:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - print_parameter:
+          to: ${CIRCLE_WORKFLOW_ID}
   save_hello_world_output:
     docker:
       - image: circleci/node:13.8.0
@@ -25,11 +39,12 @@ jobs:
     steps:
       - attach_workspace:
           at: ~/
-      - run: cat ~/output.txt    
+      - run: cat ~/output.txt
 workflows:
   # Name the workflow "welcome"
-  welcome:    
+  welcome:
     jobs:
+      - print_pipeline
       - print_hello
       - print_world:
           requires:
