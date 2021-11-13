@@ -3,8 +3,9 @@ commands:
   print_parameter:
     description: to print pipeline id
     parameters:
-      id: string
-      default: dummy id
+      id:
+        type: string
+        default: dummy id
     steps:
       - run: echo << parameters.id >>
 jobs:
@@ -23,7 +24,7 @@ jobs:
       - image: circleci/node:13.8.0
     steps:
       - print_parameter:
-          id: temp
+          id: ${CIRCLE_WORKFLOW_ID}
   save_hello_world_output:
     docker:
       - image: circleci/node:13.8.0
