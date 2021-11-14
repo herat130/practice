@@ -4,7 +4,8 @@
 /node_modules
 /.pnp
 .pnp.js
-
+/ansibles/ancible.pem
+inventory
 # testing
 /coverage
 
