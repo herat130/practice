@@ -1,58 +1,39 @@
 version: 2.1
-defaults: &defaults
-  docker:
-    - image: circleci/node:13.8.0
-commands:
-  print_parameter:
-    description: to print pipeline id
-    parameters:
-      id:
-        type: string
-        default: dummy id
-    steps:
-      - run: echo << parameters.id >>
 jobs:
-  print_hello:
-    <<: *defaults
+  build:
+    docker:
+      - image: circleci/node:13.8.0
     steps:
-      - run: exit 1
-      - run:
-            name: on error
-            command: echo "Hello Error!"
-            when: on_fail
-  print_world:
-    <<: *defaults
-    steps:
-      - run: echo ${MY_ENV_NAME}
-  print_pipeline:
-    <<: *defaults
-    steps:
-      - print_parameter:
-          id: ${CIRCLE_WORKFLOW_ID}
-  save_hello_world_output:
-    <<: *defaults
-    steps:
-      - run: echo 'storing and retrieve from workspace' > ~/output.txt
-      - persist_to_workspace:
-          root: ~/
+      - checkout
+      - run: npm i
+      - save_cache:
+          key: "npm-packages"
           paths:
-            - output.txt
-  print_output_file:
-    <<: *defaults
+            - /src/node_modules
+      - run: npm run build
+  test:
+    docker:
+      - image: circleci/node:13.8.0
     steps:
-      - attach_workspace:
-          at: ~/
-      - run: cat ~/output.txt
+      - checkout
+      - restore_cache:
+          key: "npm-packages"
+      - run: npm i
+      - run: npm run test
+  analyze:
+    docker:
+      - image: circleci/node:13.8.0
+    steps:
+      - checkout
+      - restore_cache:
+          key: "npm-packages"
+      - run: npm audit
 workflows:
-  # Name the workflow "welcome"
   welcome:
     jobs:
-      - print_pipeline
-      - print_hello
-      - print_world:
-          requires:
-            - print_hello
-      - save_hello_world_output
-      - print_output_file:
-          requires:
-            - save_hello_world_output
+      - build
+      - test:
+          - requires: -build
+      - analyze:
+          - requires:
+              - test
