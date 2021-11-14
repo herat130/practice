@@ -15,7 +15,11 @@ jobs:
   print_hello:
     <<: *defaults
     steps:
-      - run: echo hello
+      - run: exit 1
+      - run:
+            name: on error
+            command: echo "Hello Error!"
+            when: on_fail
   print_world:
     <<: *defaults
     steps:
