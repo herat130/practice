@@ -29,7 +29,7 @@ jobs:
           key: "npm-packages"
       - run: npm audit
 workflows:
-  welcome:
+  my_workflow:
     jobs:
       - build
       - test:
