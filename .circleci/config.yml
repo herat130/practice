@@ -1,44 +1,26 @@
 version: 2.1
-
+# Use a package of configuration called an orb.
+orbs:
+  # Choose either one of the orbs below
+  # welcome: circleci/welcome-orb@0.4.1
+  # aws-cli: circleci/aws-cli@2.0.3
+# Define the jobs we want to run for this project
 jobs:
-  build:
+  create_infrastructure:
     docker:
-      - image: circleci/node:13.8.0
+      - image: amazon/aws-cli
     steps:
       - checkout
-      - run: npm i
-      - save_cache:
-          key: "npm-packages"
-          paths:
-            - /src/node_modules
-      - run: npm run build
-  test:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - "npm-packages"
-      - run: npm i
-      - run: npm run test
-  analyze:
-    docker:
-      - image: circleci/node:13.8.0
-    steps:
-      - checkout
-      - restore_cache:
-          keys:
-            - "npm-packages"
-      - run: npm audit
-
+      - run:
+          name: Create Cloudformation Stack
+          command: |
+            aws cloudformation deploy \
+              --template-file cloudfomration-server.yml \
+              --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
+              --region us-east-2
+# Sequential workflow
 workflows:
-  my_workflow:
+  # Name the workflow
+  myWorkflow:
     jobs:
-      - build
-      - test:
-          requires:
-            - build
-      - analyze:
-          requires:
-            - test
+      - create_infrastructure
