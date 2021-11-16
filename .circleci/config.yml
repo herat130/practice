@@ -17,7 +17,7 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:5} \
-              --region us-east-2
+              --region us-west-2
 # Sequential workflow
 workflows:
   # Name the workflow
