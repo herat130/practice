@@ -5,7 +5,6 @@
 /.pnp
 .pnp.js
 /ansibles/ancible.pem
-inventory
 # testing
 /coverage
 
