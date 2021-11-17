@@ -22,7 +22,7 @@ jobs:
   # # Exercise: Config and Deployment
   configure_infrastructure:
     docker:
-      - image: python:3.7-alpine3.11
+      - image: [python:3.7-alpine3.11, amazon/aws-cli]
     steps:
       - checkout
       - add_ssh_keys:
@@ -37,16 +37,16 @@ jobs:
             cd ansibles
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
             ansible-playbook -i inventory main-remote.yml
-      - destroy_environment
+      - destroy_environment:
           when: on_fail
   smoke_test:
     docker:
-      - image: alpine:latest
+      - image: amazon/aws-cli
     steps:
       - run:
           name: Test job
           command: return 1
-      - destroy_environment
+      - destroy_environment:
           when: on_fail
 workflows:
   # Name the workflow
