@@ -37,14 +37,14 @@ jobs:
             cd ansibles
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
             ansible-playbook -i inventory main-remote.yml
-    smoke_test:
-      docker:
-        - image: alpine:latest
-      steps:
-        - run:
-            name: Test job
-            command: return 1
-        - destroy_environment
+  smoke_test:
+    docker:
+      - image: alpine:latest
+    steps:
+      - run:
+          name: Test job
+          command: return 1
+      - destroy_environment
 workflows:
   # Name the workflow
   myWorkflow:
