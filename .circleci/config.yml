@@ -38,6 +38,7 @@ jobs:
             cd ansibles
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
             ansible-playbook -i inventory main-remote.yml
+      - destroy_environment
   smoke_test:
     docker:
       - image: alpine:latest
