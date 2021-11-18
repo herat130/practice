@@ -17,10 +17,10 @@ jobs:
       - run:
           name: Create Cloudformation Stack
           command: |
+            rm -rf inventory
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
-            cd ansibles
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
             cat inventory
   # deploy_cloudfront:
@@ -50,7 +50,6 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            cd ansibles
             cat inventory
             ansible-playbook -i inventory main-remote.yml
       # - destroy_environment
