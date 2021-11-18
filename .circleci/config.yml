@@ -20,6 +20,9 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
+            cd ansibles
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
+            cat inventory
   # deploy_cloudfront:
   #     docker:
   #       - image: amazon/aws-cli
@@ -35,7 +38,7 @@ jobs:
   # # Exercise: Config and Deployment
   configure_infrastructure:
     docker:
-      - image: [python:3.7-alpine3.11, amazon/aws-cli]
+      - image: python:3.7-alpine3.11
     steps:
       - checkout
       - add_ssh_keys:
@@ -48,7 +51,6 @@ jobs:
           name: Run Playbook and Configure server
           command: |
             cd ansibles
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory   
             ansible-playbook -i inventory main-remote.yml
       # - destroy_environment
   smoke_test:
