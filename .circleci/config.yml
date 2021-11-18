@@ -20,10 +20,10 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory.txt
       - attach_workspace:
           at: ~/
-      - run: cat ~/inventory
+      - run: cat ~/inventory.txt
   # deploy_cloudfront:
   #     docker:
   #       - image: amazon/aws-cli
@@ -47,7 +47,8 @@ jobs:
       - persist_to_workspace:
           root: ~/
           paths:
-            - inventory
+            - inventory.txt
+      - run: inventory.txt --output text >> inventory
       - run:
           name: Install Ansible
           command: |
