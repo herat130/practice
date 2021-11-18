@@ -20,6 +20,18 @@ jobs:
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
+  # deploy_cloudfront:
+  #     docker:
+  #       - image: amazon/aws-cli
+  #     steps:
+  #       - checkout
+  #       - run:
+  #           name: deploy cloudfront
+  #           command: |
+  #             aws cloudformation deploy \
+  #               --template-file ./cloudfront.yml \
+  #               --stack-name production-distro \
+  #               --parameter-overrides PipelineID=herat-demo
   # # Exercise: Config and Deployment
   configure_infrastructure:
     docker:
@@ -27,7 +39,7 @@ jobs:
     steps:
       - checkout
       - add_ssh_keys:
-          fingerprints: ["XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX:XX"]
+          fingerprints: ["e7:59:53:08:f6:9d:b4:6c:db:f8:b5:49:ed:1e:fa:ec"]
       - run:
           name: Install Ansible
           command: |
@@ -36,9 +48,9 @@ jobs:
           name: Run Playbook and Configure server
           command: |
             cd ansibles
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
+            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory   
             ansible-playbook -i inventory main-remote.yml
-      - destroy_environment
+      # - destroy_environment
   smoke_test:
     docker:
       - image: amazon/aws-cli
@@ -55,6 +67,6 @@ workflows:
       - configure_infrastructure:
           requires:
             - create_infrastructure
-      - smoke_test:
-          requires:
-            - configure_infrastructure
+      # - smoke_test:
+      #     requires:
+      #       - configure_infrastructure
