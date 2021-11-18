@@ -51,6 +51,7 @@ jobs:
           name: Run Playbook and Configure server
           command: |
             cd ansibles
+            cat inventory
             ansible-playbook -i inventory main-remote.yml
       # - destroy_environment
   smoke_test:
