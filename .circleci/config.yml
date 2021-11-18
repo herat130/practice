@@ -17,13 +17,13 @@ jobs:
       - run:
           name: Create Cloudformation Stack
           command: |
-            rm -rf inventory
             aws cloudformation deploy \
               --template-file cloudfomration-server.yml \
               --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
-            cd ansibles
             aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory
-            cat inventory
+      - attach_workspace:
+          at: ~/
+      - run: cat ~/inventory
   # deploy_cloudfront:
   #     docker:
   #       - image: amazon/aws-cli
@@ -44,6 +44,10 @@ jobs:
       - checkout
       - add_ssh_keys:
           fingerprints: ["e7:59:53:08:f6:9d:b4:6c:db:f8:b5:49:ed:1e:fa:ec"]
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - inventory
       - run:
           name: Install Ansible
           command: |
@@ -51,9 +55,9 @@ jobs:
       - run:
           name: Run Playbook and Configure server
           command: |
-            cd ansibles
             cat inventory
-            ansible-playbook -i inventory main-remote.yml
+            cd ansibles   
+            ansible-playbook -i ./inventory main-remote.yml
       # - destroy_environment
   smoke_test:
     docker:
