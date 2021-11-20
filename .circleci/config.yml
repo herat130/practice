@@ -1,81 +1,73 @@
 version: 2.1
-# Use a package of configuration called an orb.
-commands:
-  destroy_environment:
-    steps:
-      - run:
-          name: Destroy environment
-          when: on_fail
-          command: |
-            aws cloudformation delete-stack --stack-name myStack-${CIRCLE_WORKFLOW_ID:0:7}
+
 jobs:
-  create_infrastructure:
+  create_and_deploy_front_end:
+    docker:
+    - image: amazon/aws-cli
+    steps:
+    - checkout
+    - run:
+        name: Execute bucket.yml - Create Cloudformation Stack
+        command: |
+          aws cloudformation deploy \
+          --template-file bucket.yml \
+          --stack-name stack-create-bucket-${CIRCLE_WORKFLOW_ID:0:7} \
+          --parameter-overrides MyBucketName="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+    # Uncomment the step below if yoou wish to upload all contents of the current directory to the S3 bucket
+      - run: aws s3 sync . s3://mybucket-${CIRCLE_WORKFLOW_ID:0:7} --delete
+    # Fetch and save the pipeline ID (bucket ID) responsible for the last release.
+  get_last_deployment_id:
     docker:
       - image: amazon/aws-cli
     steps:
       - checkout
+      - run: yum install -y tar gzip
       - run:
-          name: Create Cloudformation Stack
+          name: Fetch and save the old pipeline ID (bucket name) responsible for the last release.
           command: |
-            aws cloudformation deploy \
-              --template-file cloudfomration-server.yml \
-              --stack-name myStack--${CIRCLE_WORKFLOW_ID:0:7}
-            aws ec2 describe-instances --query 'Reservations[*].Instances[*].PublicIpAddress' --output text >> inventory.txt
-      - attach_workspace:
-          at: ~/
-      - run: cat ~/inventory.txt
-  # deploy_cloudfront:
-  #     docker:
-  #       - image: amazon/aws-cli
-  #     steps:
-  #       - checkout
-  #       - run:
-  #           name: deploy cloudfront
-  #           command: |
-  #             aws cloudformation deploy \
-  #               --template-file ./cloudfront.yml \
-  #               --stack-name production-distro \
-  #               --parameter-overrides PipelineID=herat-demo
-  # # Exercise: Config and Deployment
-  configure_infrastructure:
-    docker:
-      - image: python:3.7-alpine3.11
-    steps:
-      - checkout
-      - add_ssh_keys:
-          fingerprints: ["e7:59:53:08:f6:9d:b4:6c:db:f8:b5:49:ed:1e:fa:ec"]
+            aws cloudformation \
+            list-exports --query "Exports[?Name==\`PipelineID\`].Value" \
+            --no-paginate --output text > ~/textfile.txt
       - persist_to_workspace:
           root: ~/
-          paths:
-            - inventory.txt
-      - run: inventory.txt --output text >> inventory
-      - run:
-          name: Install Ansible
-          command: |
-            apk add --update ansible
-      - run:
-          name: Run Playbook and Configure server
-          command: |
-            cat inventory
-            cd ansibles   
-            ansible-playbook -i ./inventory main-remote.yml
-      # - destroy_environment
-  smoke_test:
+          paths: 
+            - textfile.txt 
+  promote_to_production:  
     docker:
       - image: amazon/aws-cli
     steps:
+      - checkout
       - run:
-          name: Test job
-          command: return 1
-      - destroy_environment
+          name: Execute cloudfront.yml
+          command: |
+            aws cloudformation deploy \
+            --template-file cloudfront.yml \
+            --stack-name production-distro \
+            --parameter-overrides PipelineID="mybucket-${CIRCLE_WORKFLOW_ID:0:7}"
+  clean_up_old_front_end:
+    docker:
+      - image: amazon/aws-cli
+    steps:
+      - checkout
+      - run: yum install -y tar gzip
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Destroy the previous S3 bucket and CloudFormation stack. 
+          # Use $OldBucketID environment variable or mybucket644752792305 below.
+          # Similarly, you can create and use $OldStackID environment variable in place of production-distro 
+          command: |
+            export OldBucketID=$(cat ~/textfile.txt)
+            aws s3 rm "s3://${OldBucketID}" --recursive
 workflows:
-  # Name the workflow
-  myWorkflow:
+  my_workflow:
     jobs:
-      - create_infrastructure
-      - configure_infrastructure:
+      - create_and_deploy_front_end
+      - promote_to_production:
+          requires: 
+            - create_and_deploy_front_end
+      - get_last_deployment_id
+      - clean_up_old_front_end:
           requires:
-            - create_infrastructure
-      # - smoke_test:
-      #     requires:
-      #       - configure_infrastructure
+            - get_last_deployment_id
+            - promote_to_production
